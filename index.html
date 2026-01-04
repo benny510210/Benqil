@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>BennyDL Pro - Mewah</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e1e2f">
+<meta name="description" content="Downloader Video, Audio & Foto TikTok, Instagram, Facebook, X">
+
+<!-- INLINE PWA MANIFEST -->
+<link rel="manifest" href='data:application/manifest+json,{
+  "name":"BennyDL Pro",
+  "short_name":"BennyDL",
+  "start_url":".",
+  "display":"standalone",
+  "background_color":"#1e1e2f",
+  "theme_color":"#1e1e2f"
+}'>
+
+<style>
+:root{
+--bg:#1e1e2f;
+--card:rgba(30,30,47,0.85);
+--txt:#e5e7eb;
+--mut:#94a3b8;
+--acc1:#38bdf8;
+--acc2:#f472b6;
+--acc3:#facc15;
+--hover-gradient:linear-gradient(45deg,var(--acc1),var(--acc2),var(--acc3));
+}
+*{box-sizing:border-box}
+body{
+margin:0;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+background:radial-gradient(circle at top left,#3b0066,#1e1e2f);
+font-family:'Segoe UI',Arial,sans-serif;
+color:var(--txt);
+transition:background 0.5s;
+}
+.card{
+width:100%;
+max-width:480px;
+background:var(--card);
+backdrop-filter:blur(20px);
+border-radius:24px;
+padding:26px;
+box-shadow:0 20px 80px rgba(0,0,0,0.8);
+border:2px solid rgba(255,255,255,0.05);
+transition:0.3s;
+}
+.card:hover{
+box-shadow:0 25px 100px rgba(0,0,0,0.9);
+transform:scale(1.02);
+}
+h1{margin:10px 0 4px;font-size:26px;text-align:center;background:linear-gradient(45deg,var(--acc1),var(--acc2),var(--acc3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+p{margin:0 0 14px;color:var(--mut);text-align:center;font-size:14px;}
+.badge{
+display:inline-block;
+padding:5px 12px;
+border-radius:999px;
+border:1px solid rgba(255,255,255,0.2);
+background:linear-gradient(120deg,var(--acc1),var(--acc2));
+font-size:12px;color:#fff;margin:4px 2px;
+transition:0.3s;
+}
+.badge:hover{
+transform:scale(1.1);
+}
+input{
+width:100%;
+padding:16px;
+border-radius:16px;
+border:none;
+outline:none;
+background:rgba(0,0,0,0.3);
+color:#fff;
+font-size:14px;
+margin-top:12px;
+box-shadow:0 0 10px rgba(255,255,255,0.1);
+transition:0.3s;
+}
+input:focus{
+background:rgba(0,0,0,0.6);
+box-shadow:0 0 12px var(--acc1);
+}
+.row{display:flex;gap:10px;margin-top:12px}
+button{
+flex:1;
+padding:16px;
+border:none;
+border-radius:16px;
+font-weight:700;
+cursor:pointer;
+background:var(--hover-gradient);
+color:#001018;
+font-size:14px;
+transition:0.3s;
+box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
+button:hover{
+transform:scale(1.05);
+box-shadow:0 6px 25px rgba(0,0,0,0.6);
+}
+button.alt{
+background:rgba(0,0,0,0.3);
+color:#fff;
+border:1px solid rgba(255,255,255,0.2);
+}
+#status{margin:14px 0;font-size:14px;color:var(--mut);min-height:18px;text-align:center;}
+#result a{display:block;margin-top:10px;color:var(--acc1);text-align:center;font-weight:600;}
+canvas{
+width:100%;
+height:300px;
+border-radius:16px;
+border:2px solid rgba(255,255,255,0.1);
+margin-top:14px;
+background:rgba(0,0,0,0.3);
+touch-action:none;
+box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+.footer{
+margin-top:16px;
+font-size:12px;
+color:var(--mut);
+text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<div style="text-align:center">
+<span class="badge">TikTok</span>
+<span class="badge">Instagram</span>
+<span class="badge">Facebook</span>
+<span class="badge">X</span>
+<span class="badge">Audio</span>
+</div>
+
+<h1>BennyDL Pro</h1>
+<p>Video • Audio • Foto • Canvas Editor</p>
+
+<input id="url" placeholder="Tempel link di sini">
+
+<div class="row">
+<button onclick="download('video')">Video</button>
+<button onclick="download('audio')" class="alt">Audio</button>
+</div>
+
+<div class="row">
+<button onclick="download('photo')" class="alt">Foto</button>
+<button onclick="clearCanvas()" class="alt">Clear</button>
+</div>
+
+<div class="row">
+<button onclick="saveCanvas()" class="alt">Save</button>
+<button onclick="pasteLink()" class="alt">Paste</button>
+</div>
+
+<div id="status"></div>
+<div id="result"></div>
+<canvas id="canvas"></canvas>
+<div class="footer">© Benny Artady</div>
+</div>
+
+<script>
+/* ===== SERVICE WORKER INLINE ===== */
+if('serviceWorker' in navigator){
+const swCode = `
+self.addEventListener('install',e=>{self.skipWaiting();});
+self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>new Response('Offline')));});
+`;
+const blob=new Blob([swCode],{type:'text/javascript'});
+navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
+
+/* ===== CANVAS ===== */
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+canvas.width=canvas.offsetWidth;
+canvas.height=300;
+let drawing=false;
+function pos(e){
+if(e.touches){const r=canvas.getBoundingClientRect();return {x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};}
+return {x:e.offsetX,y:e.offsetY};
+}
+canvas.onmousedown=e=>{drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo
